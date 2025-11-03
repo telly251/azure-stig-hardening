@@ -40,19 +40,32 @@
     state: started
     enabled: yes
 
-- name: Configure UFW
-  ufw:
-    state: enabled
-    policy: deny
-    direction: incoming
+- name: Enable UFW
+  shell: |
+    ufw --force enable
+  changed_when: true
 
-- name: Allow SSH
-  ufw:
-    rule: allow
-    port: '22'
-    proto: tcp
+- name: Set UFW default policies
+  shell: |
+    ufw default deny incoming
+    ufw default allow outgoing
+  changed_when: true
 
-- name: Enable fail2ban
+- name: Allow SSH through UFW
+  shell: |
+    ufw allow 22/tcp
+  changed_when: true
+
+- name: Check UFW status
+  shell: ufw status verbose
+  register: ufw_status
+  changed_when: false
+
+- name: Display UFW status
+  debug:
+    var: ufw_status.stdout_lines
+
+- name: Enable and start fail2ban
   systemd:
     name: fail2ban
     state: started
