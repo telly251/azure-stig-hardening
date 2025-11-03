@@ -1,0 +1,9 @@
+---
+- name: restart sshd
+  systemd:
+    name: sshd
+    state: restarted
+
+- name: reload auditd
+  command: service auditd restart
+  ignore_errors: yes
