@@ -1,0 +1,74 @@
+---
+- name: Create STIG directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - /opt/stig
+    - /var/log/stig-compliance
+
+- name: Install OpenSCAP
+  apt:
+    name:
+      - libopenscap8
+      - openscap-scanner
+      - ssg-base
+      - ssg-debderived
+    state: present
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Apply manual STIG controls
+  include_tasks: manual-stig-controls.yml
+
+- name: Run STIG assessment
+  shell: |
+    oscap xccdf eval \
+      --results /var/log/stig-compliance/stig-results-{{ ansible_date_time.iso8601 }}.xml \
+      --report /var/log/stig-compliance/stig-assessment-{{ ansible_date_time.iso8601 }}.html \
+      /usr/share/xml/scap/ssg/content/ssg-ubuntu2004-ds.xml || true
+  register: stig_assessment
+  when: ansible_distribution == "Ubuntu"
+
+- name: Parse compliance score
+  shell: |
+    RESULTS_FILE="/var/log/stig-compliance/stig-results-{{ ansible_date_time.iso8601 }}.xml"
+    if [ -f "$RESULTS_FILE" ]; then
+      TOTAL=$(grep -c "rule-result" $RESULTS_FILE 2>/dev/null || echo "0")
+      PASSED=$(grep -c "result>pass" $RESULTS_FILE 2>/dev/null || echo "0")
+      FAILED=$(grep -c "result>fail" $RESULTS_FILE 2>/dev/null || echo "0")
+      echo "Total Rules: $TOTAL"
+      echo "Passed: $PASSED"
+      echo "Failed: $FAILED"
+      if [ $TOTAL -gt 0 ]; then
+        SCORE=$((PASSED * 100 / TOTAL))
+        echo "Compliance Score: ${SCORE}%"
+      fi
+    fi
+  register: compliance_score
+  ignore_errors: yes
+
+- name: Create compliance summary
+  template:
+    src: compliance-summary.j2
+    dest: /var/log/stig-compliance/summary-{{ ansible_date_time.iso8601 }}.txt
+    mode: '0644'
+
+- name: Create symlinks
+  file:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    state: link
+    force: yes
+  loop:
+    - src: "/var/log/stig-compliance/stig-assessment-{{ ansible_date_time.iso8601 }}.html"
+      dest: /var/log/stig-compliance/latest-assessment.html
+    - src: "/var/log/stig-compliance/summary-{{ ansible_date_time.iso8601 }}.txt"
+      dest: /var/log/stig-compliance/latest-summary.txt
+  ignore_errors: yes
+
+- name: Display results
+  debug:
+    msg: "{{ compliance_score.stdout_lines }}"
+  when: compliance_score.stdout_lines is defined
