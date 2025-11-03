@@ -1,0 +1,14 @@
+---
+- name: Install Azure Linux Agent
+  apt:
+    name: walinuxagent
+    state: present
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Ensure Azure agent is running
+  systemd:
+    name: walinuxagent
+    state: started
+    enabled: yes
+  ignore_errors: yes
