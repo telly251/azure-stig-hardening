@@ -1,0 +1,59 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  when: ansible_distribution == "Ubuntu"
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    autoremove: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: Install security packages
+  apt:
+    name:
+      - aide
+      - aide-common
+      - auditd
+      - audispd-plugins
+      - rsyslog
+      - ufw
+      - fail2ban
+      - chrony
+      - unattended-upgrades
+      - clamav
+      - clamav-daemon
+      - apparmor
+      - apparmor-utils
+      - libpam-pwquality
+      - openssh-server
+      - curl
+      - wget
+      - unzip
+    state: present
+
+- name: Enable and start auditd
+  systemd:
+    name: auditd
+    state: started
+    enabled: yes
+
+- name: Configure UFW
+  ufw:
+    state: enabled
+    policy: deny
+    direction: incoming
+
+- name: Allow SSH
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+
+- name: Enable fail2ban
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: yes
