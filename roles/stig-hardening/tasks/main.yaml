@@ -27,7 +27,7 @@
     oscap xccdf eval \
       --results /var/log/stig-compliance/stig-results-{{ ansible_date_time.iso8601 }}.xml \
       --report /var/log/stig-compliance/stig-assessment-{{ ansible_date_time.iso8601 }}.html \
-      /usr/share/xml/scap/ssg/content/ssg-ubuntu2004-ds.xml || true
+      /usr/share/xml/scap/ssg/content/ssg-ubuntu2204-ds.xml || true
   register: stig_assessment
   when: ansible_distribution == "Ubuntu"
 
