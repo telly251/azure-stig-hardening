@@ -1,0 +1,46 @@
+---
+- name: Azure Linux VM DISA STIG Hardening
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  vars:
+    target_hostname: "{{ inventory_hostname }}"
+    report_timestamp: "{{ ansible_date_time.iso8601 }}"
+    
+  pre_tasks:
+    - name: Display target information
+      debug:
+        msg:
+          - "===================================="
+          - "Target Host: {{ inventory_hostname }}"
+          - "IP Address: {{ ansible_host }}"
+          - "OS: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "===================================="
+    
+    - name: Wait for cloud-init to complete
+      wait_for:
+        path: /var/lib/cloud/instance/boot-finished
+        timeout: 600
+      ignore_errors: yes
+      
+    - name: Ensure Python3 is installed
+      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3-minimal)
+      changed_when: false
+      
+    - name: Gather facts after Python installation
+      setup:
+  
+  roles:
+    - azure-prep
+    - security-packages
+    - stig-hardening
+  
+  post_tasks:
+    - name: Display completion message
+      debug:
+        msg:
+          - "===================================="
+          - "Security hardening completed!"
+          - "Reports at: /var/log/stig-compliance/"
+          - "===================================="
