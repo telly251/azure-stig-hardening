@@ -1,0 +1,75 @@
+╔═══════════════════════════════════════════════════════════════╗
+║          DISA STIG COMPLIANCE ASSESSMENT REPORT               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+System Information:
+-------------------
+Hostname:           {{ ansible_hostname }}
+IP Address:         {{ ansible_default_ipv4.address }}
+Operating System:   {{ ansible_distribution }} {{ ansible_distribution_version }}
+Assessment Date:    {{ ansible_date_time.iso8601 }}
+
+Compliance Results:
+-------------------
+{{ compliance_score.stdout }}
+
+Applied Security Controls:
+--------------------------
+✓ Password policies configured
+✓ SSH hardening applied
+✓ Audit rules configured
+✓ Security packages installed
+✓ Firewall configured
+✓ Core dumps disabled
+✓ ASLR enabled
+
+Reports: /var/log/stig-compliance/latest-assessment.html
+```
+- **Commit new file**
+
+### Step 3: Update Project in AAP
+
+Now go back to AAP:
+
+1. **Resources → Projects**
+2. Find your **Azure STIG Hardening** project
+3. Click the **Sync** button (circular arrow icon) on the right
+4. Watch it sync - should turn green ✓
+
+---
+
+## Option 2: Use Private Repository (More Secure)
+
+If you want to keep the repo private:
+
+### Step 1: Create Private Repository
+
+1. Go to https://github.com/new
+2. Repository name: `azure-stig-hardening`
+3. **Select: Private** ← Important!
+4. ☑ Add a README file
+5. Click **Create repository**
+
+### Step 2: Create GitHub Personal Access Token
+
+1. Go to https://github.com/settings/tokens
+2. Click **Generate new token → Generate new token (classic)**
+3. Note: `AAP Access Token`
+4. Expiration: `90 days` (or your preference)
+5. Select scopes:
+   - ☑ `repo` (Full control of private repositories)
+6. Click **Generate token**
+7. **Copy the token immediately!** (Looks like: `ghp_xxxxxxxxxxxx`)
+
+### Step 3: Add GitHub Credential to AAP
+
+1. In AAP, go to **Resources → Credentials**
+2. Click **Add**
+3. Fill in:
+```
+   Name: GitHub Access Token
+   Organization: Default
+   Credential Type: Source Control
+   
+   USERNAME: your_github_username
+   PASSWORD: ghp_xxxxxxxxxxxx (the token you just created)
